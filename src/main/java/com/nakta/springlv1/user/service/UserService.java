@@ -4,6 +4,7 @@ import com.nakta.springlv1.user.dto.LoginRequestDto;
 import com.nakta.springlv1.user.dto.SignupRequestDto;
 import com.nakta.springlv1.user.dto.StringResponseDto;
 import com.nakta.springlv1.user.entity.User;
+import com.nakta.springlv1.user.entity.UserRoleEnum;
 import com.nakta.springlv1.user.errorcode.UserErrorCode;
 import com.nakta.springlv1.error.exception.CustomException;
 import com.nakta.springlv1.user.jwt.JwtUtil;
@@ -27,6 +28,8 @@ public class UserService {
         this.jwtUtil = jwtUtil;
     }
 
+    private final String ADMIN_TOKEN = "MEronGMERoNGaMEROngMErONG";
+
     public StringResponseDto signup(SignupRequestDto requestDto) { //void리턴??
         String username = requestDto.getUsername();
         String password = passwordEncoder.encode(requestDto.getPassword());
@@ -35,7 +38,16 @@ public class UserService {
         if (tmpUser.isPresent()) {
             throw new CustomException(UserErrorCode.DUPLICATED_ID);
         }
-        User user = new User(username,password);
+
+        UserRoleEnum role = UserRoleEnum.USER;
+        if (requestDto.isAdmin()) {
+            if (!requestDto.getAdminToken().equals(ADMIN_TOKEN)) {
+                throw new CustomException(UserErrorCode.ADMINTOKEN_NOT_MATCH);
+            }
+            role = UserRoleEnum.ADMIN;
+        }
+
+        User user = new User(username,password, role);
         userRepository.save(user);
         return new StringResponseDto( "새로운 아이디 저장 성공 ㅋㅋ");
 
@@ -52,7 +64,7 @@ public class UserService {
         if (!passwordEncoder.matches(password,user.getPassword())) {
             throw new CustomException(UserErrorCode.PASSWORD_NOT_MATCH);
         }
-        String token = jwtUtil.createToken(user.getUsername());
+        String token = jwtUtil.createToken(user.getUsername(), user.getRole());
         jwtUtil.addJwtToCookie(token, res);
         return new StringResponseDto("로그인 성공 ㅋㅋ");
 
