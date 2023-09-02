@@ -33,12 +33,16 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Board> boardList = new ArrayList<>();
 
-    @OneToMany(mappedBy = "user")
+    @OneToMany(mappedBy = "user", cascade = CascadeType.PERSIST)
     private List<Comment> commentList = new ArrayList<>();
 
     public User(String username, String password, UserRoleEnum role) {
         this.username = username;
         this.password = password;
         this.role = role;
+    }
+
+    public void addCommentList(Comment comment) {
+        this.commentList.add(comment);
     }
 }

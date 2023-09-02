@@ -1,6 +1,8 @@
 package com.nakta.springlv1.comment.controller;
 
 import com.nakta.springlv1.board.service.BoardService;
+import com.nakta.springlv1.comment.dto.CommentRequestDto;
+import com.nakta.springlv1.comment.dto.CommentResponseDto;
 import com.nakta.springlv1.comment.service.CommentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -14,11 +16,11 @@ public class CommentController {
 
     private final CommentService commentService;
 
-//    @PostMapping("/board/{id}/comment")
-//    public ResponseEntity<CommentResponseDto> createComment(
-//            @PathVariable Long id, @RequestBody CommentRequestDto requestDto, HttpServletRequest req) {
-//        return null;
-//    }
+    @PostMapping("/board/{id}/comment")
+    public ResponseEntity<CommentResponseDto> createComment(
+            @PathVariable Long id, @RequestBody CommentRequestDto requestDto, HttpServletRequest req) {
+        return ResponseEntity.ok(commentService.createComment(id,requestDto,req));
+    }
 //
 //    @PutMapping("/board/{id}/comment/{id2}")
 //    public ResponseEntity<CommentResponseDto> modifyComment(

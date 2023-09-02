@@ -1,6 +1,7 @@
 package com.nakta.springlv1.comment.entity;
 
 import com.nakta.springlv1.board.entity.Board;
+import com.nakta.springlv1.comment.dto.CommentRequestDto;
 import com.nakta.springlv1.user.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -25,4 +26,10 @@ public class Comment {
     @ManyToOne
     @JoinColumn(name = "board_id")
     private Board board;
+
+    public Comment(CommentRequestDto requestDto, User user, Board board) {
+        this.message = requestDto.getMessage();
+        this.user = user;
+        this.board = board;
+    }
 }
