@@ -12,7 +12,8 @@ public class SignupRequestDto {
     @Size(min = 4, max = 10)
     String username;
 
-    @Pattern(regexp = "^[a-z|A-Z|0-9]*$")
+//    @Pattern(regexp = "^[a-z|A-Z|0-9]*$")
+    @Pattern(regexp = "^[!-~]*$")
     @Size(min = 8, max = 16)
     String password;
 
