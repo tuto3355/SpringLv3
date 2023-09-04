@@ -18,6 +18,9 @@ public class Comment extends Timestamped { // Timestamped가 board 패키지에 
     private Long id;
 
     @Column(nullable = false)
+    private String username;
+
+    @Column(nullable = false)
     private String message;
 
     @ManyToOne
@@ -31,6 +34,7 @@ public class Comment extends Timestamped { // Timestamped가 board 패키지에 
     public Comment(CommentRequestDto requestDto, User user, Board board) {
         this.message = requestDto.getMessage();
         this.user = user;
+        this.username = user.getUsername();
         this.board = board;
     }
 
