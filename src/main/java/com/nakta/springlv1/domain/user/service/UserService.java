@@ -30,7 +30,7 @@ public class UserService {
 
     private final String ADMIN_TOKEN = "MEronGMERoNGaMEROngMErONG";
 
-    public StringResponseDto signup(SignupRequestDto requestDto) { //void리턴??
+    public StringResponseDto signup(SignupRequestDto requestDto) {
         String username = requestDto.getUsername();
         String password = passwordEncoder.encode(requestDto.getPassword());
 

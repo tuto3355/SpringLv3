@@ -2,13 +2,18 @@ package com.nakta.springlv1.domain.board.service;
 
 import com.nakta.springlv1.domain.board.dto.BoardRequestDto;
 import com.nakta.springlv1.domain.board.dto.BoardResponseDto;
+import com.nakta.springlv1.domain.board.exception.BoardErrorCode;
 import com.nakta.springlv1.domain.board.repository.BoardRepository;
 import com.nakta.springlv1.domain.comment.dto.CommentResponseDto;
 import com.nakta.springlv1.domain.comment.entity.Comment;
+import com.nakta.springlv1.domain.comment.exception.CommentErrorCode;
 import com.nakta.springlv1.domain.comment.repository.CommentRepository;
 import com.nakta.springlv1.domain.user.dto.StringResponseDto;
 import com.nakta.springlv1.domain.board.entity.Board;
+import com.nakta.springlv1.domain.user.entity.User;
 import com.nakta.springlv1.domain.user.jwt.JwtUtil;
+import com.nakta.springlv1.domain.user.repository.UserRepository;
+import com.nakta.springlv1.global.exception.CustomException;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +27,7 @@ import java.util.List;
 public class BoardService {
     private final BoardRepository boardRepository;
     private final CommentRepository commentRepository;
+    private final UserRepository userRepository;
 
     private final JwtUtil jwtUtil;
 
@@ -31,7 +37,11 @@ public class BoardService {
         String tokenValue = validateToken(req);
 
         Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
-        Board board = new Board(requestDto, info.getSubject()); //username을 따로 받기 위한 생성자 생성
+        User user = userRepository.findByUsername(info.getSubject()).orElseThrow(() -> {
+            throw new CustomException(BoardErrorCode.CANNOT_FIND_USER); //무조건 USER가 존재할수밖에 없지않나?
+        });
+
+        Board board = new Board(requestDto, user);
         Board newboard = boardRepository.save(board);
         return new BoardResponseDto(newboard);
     }
@@ -59,12 +69,14 @@ public class BoardService {
         //작성자 일치 확인
         Board board = findById(id);
         Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
-        if (info.getSubject().equals(board.getUsername())) {
-            board.update(requestDto, info.getSubject());
-            return new BoardResponseDto(board);
-        } else {
-            throw new IllegalArgumentException("작성자가 일치하지 않습니다");
+
+        if(!(info.get("auth").equals("ADMIN"))) {
+            if (!(info.getSubject().equals(board.getUsername()))) {
+                throw new CustomException(BoardErrorCode.ID_NOT_MATCH);
+            }
         }
+        board.update(requestDto, info.getSubject());
+        return new BoardResponseDto(board);
     }
 
     public StringResponseDto deleteBoard(Long id, HttpServletRequest req) {
@@ -75,31 +87,32 @@ public class BoardService {
         //작성자 일치 확인
         Board board = findById(id);
         Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
-        if (info.getSubject().equals(board.getUsername())) {
-            boardRepository.deleteById(id);
-            return new StringResponseDto("삭제를 성공하였음");
-        } else {
-            throw new IllegalArgumentException("작성자가 일치하지 않습니다");
-        }
 
+        if(!(info.get("auth").equals("ADMIN"))) {
+            if (!(info.getSubject().equals(board.getUsername()))) {
+                throw new CustomException(BoardErrorCode.ID_NOT_MATCH);
+            }
+        }
+        boardRepository.deleteById(id);
+        return new StringResponseDto("삭제를 성공하였음");
     }
 
     private Board findById(Long id) {
-        return boardRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("선택한 메모는 존재하지 않습니다."));
-    }
-
-    private BoardResponseDto addCommentListByBoard_id(BoardResponseDto responseDto) {
-        List<Comment> list = commentRepository.findAllByBoard_IdOrderByModifiedAtDesc(responseDto.getId());
-        responseDto.addCommentList(list.stream().map(CommentResponseDto::new).toList());
-        return responseDto;
+        return boardRepository.findById(id).orElseThrow(() -> new CustomException(BoardErrorCode.CANNOT_FIND_BOARD));
     }
 
     private String validateToken(HttpServletRequest req) {
         String tokenValue = jwtUtil.getTokenFromRequest(req);
         tokenValue = jwtUtil.substringToken(tokenValue);
         if (!jwtUtil.validateToken(tokenValue)) {
-            throw new IllegalArgumentException("토큰이 유효하지 않음");
+            throw new CustomException(BoardErrorCode.BAD_TOKEN);
         }
         return tokenValue;
+    }
+
+    private BoardResponseDto addCommentListByBoard_id(BoardResponseDto responseDto) {
+        List<Comment> list = commentRepository.findAllByBoard_IdOrderByModifiedAtDesc(responseDto.getId());
+        responseDto.addCommentList(list.stream().map(CommentResponseDto::new).toList());
+        return responseDto;
     }
 }

@@ -16,22 +16,22 @@ public class CommentController {
 
     private final CommentService commentService;
 
-    @PostMapping("/board/{id}")
+    @PostMapping("/board/{commentId}")
     public ResponseEntity<CommentResponseDto> createComment(
-            @PathVariable Long id, @RequestBody CommentRequestDto requestDto, HttpServletRequest req) {
-        return ResponseEntity.ok(commentService.createComment(id,requestDto,req));
+            @PathVariable Long commentId, @RequestBody CommentRequestDto requestDto, HttpServletRequest req) {
+        return ResponseEntity.ok(commentService.createComment(commentId,requestDto,req));
     }
 
-    @PutMapping("/board/{id}/{id2}")
+    @PutMapping("/board/{boardId}/{commentId}")
     public ResponseEntity<CommentResponseDto> modifyComment(
-            @PathVariable Long id, @PathVariable Long id2,
+            @PathVariable Long boardId, @PathVariable Long commentId,
             @RequestBody CommentRequestDto requestDto, HttpServletRequest req) {
-        return ResponseEntity.ok(commentService.modifyComment(id,id2,requestDto,req));
+        return ResponseEntity.ok(commentService.modifyComment(boardId,commentId,requestDto,req));
     }
 
-    @DeleteMapping("/board/{id}/{id2}")
+    @DeleteMapping("/board/{boardId}/{commentId}")
     public ResponseEntity<StringResponseDto> deleteComment(
-            @PathVariable Long id, @PathVariable Long id2, HttpServletRequest req) {
-        return ResponseEntity.ok(commentService.deleteComment(id, id2, req));
+            @PathVariable Long boardId, @PathVariable Long commentId, HttpServletRequest req) {
+        return ResponseEntity.ok(commentService.deleteComment(boardId, commentId, req));
     }
 }

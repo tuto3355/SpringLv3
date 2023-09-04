@@ -33,10 +33,11 @@ public class Board extends Timestamped {
     @OneToMany(mappedBy = "board")
     private List<Comment> commentList = new ArrayList<>();
 
-    public Board(BoardRequestDto requestDto, String subject) {
+    public Board(BoardRequestDto requestDto, User user) {
         this.title = requestDto.getTitle();
-        this.username = subject;
+        this.username = user.getUsername();
         this.content = requestDto.getContent();
+        this.user = user;
     }
 
     public void update(BoardRequestDto requestDto, String subject) {

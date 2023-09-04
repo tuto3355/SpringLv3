@@ -5,11 +5,14 @@ import com.nakta.springlv1.domain.board.repository.BoardRepository;
 import com.nakta.springlv1.domain.comment.dto.CommentRequestDto;
 import com.nakta.springlv1.domain.comment.dto.CommentResponseDto;
 import com.nakta.springlv1.domain.comment.entity.Comment;
+import com.nakta.springlv1.domain.comment.exception.CommentErrorCode;
 import com.nakta.springlv1.domain.comment.repository.CommentRepository;
+import com.nakta.springlv1.domain.user.entity.UserRoleEnum;
 import com.nakta.springlv1.domain.user.repository.UserRepository;
 import com.nakta.springlv1.domain.user.dto.StringResponseDto;
 import com.nakta.springlv1.domain.user.entity.User;
 import com.nakta.springlv1.domain.user.jwt.JwtUtil;
+import com.nakta.springlv1.global.exception.CustomException;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -30,63 +33,56 @@ public class CommentService {
         String tokenValue = validateToken(req);
 
         Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
-        User user = userRepository.findByUsername(info.getSubject()).orElseThrow(()->{
-            throw new IllegalArgumentException("유저가 없을리가 없긴한데 일단 오류 만듬 ㅋㅋ");
+        User user = userRepository.findByUsername(info.getSubject()).orElseThrow(() -> {
+            throw new CustomException(CommentErrorCode.CANNOT_FIND_USER); //무조건 USER가 존재할수밖에 없지않나?
         });
-        Board board = boardRepository.findById(id).orElseThrow(()->{
-            throw new IllegalArgumentException("게시글이 존재하지 않습니다.");
-        });;
+        Board board = boardRepository.findById(id).orElseThrow(() -> {
+            throw new CustomException(CommentErrorCode.CANNOT_FIND_BOARD);
+        });
         Comment comment = new Comment(requestDto, user, board);
         Comment newComment = commentRepository.save(comment);
 
         return new CommentResponseDto(newComment);
-
     }
 
     @Transactional
-    public CommentResponseDto modifyComment(Long id, Long id2, CommentRequestDto requestDto, HttpServletRequest req) {
+    public CommentResponseDto modifyComment(Long boardId, Long commentId, CommentRequestDto requestDto, HttpServletRequest req) {
         //토큰 검증
         String tokenValue = validateToken(req);
-
-        Comment comment = commentRepository.findById(id2).orElseThrow(() ->
-                new IllegalArgumentException("해당 댓글이 없습니다")
-        );
-
         Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
-        User user = userRepository.findByUsername(info.getSubject()).orElseThrow(()->{
-            throw new IllegalArgumentException("유저가 없을리가 없긴한데 일단 오류 만듬 ㅋㅋ");
-        });
-        Board board = boardRepository.findById(id).orElseThrow(()->{
-            throw new IllegalArgumentException("게시글이 존재하지 않습니다.");
-        });
 
-        if (!user.equals(comment.getUser()) || !board.equals(comment.getBoard())) {
-            throw new IllegalArgumentException("댓글의 아이디나 보드명이 다릅니다.");
+        Board board = boardRepository.findById(boardId).orElseThrow(() -> {
+            throw new CustomException(CommentErrorCode.CANNOT_FIND_BOARD);
+        });
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() ->
+                new CustomException(CommentErrorCode.CANNOT_FIND_COMMENT)
+        );
+        if (!(info.get("auth").equals("ADMIN"))) {
+            if (!(info.getSubject().equals(comment.getUser().getUsername()))) {
+                throw new CustomException(CommentErrorCode.ID_NOT_MATCH);
+            }
         }
         comment.update(requestDto);
         return new CommentResponseDto(comment);
     }
 
-    public StringResponseDto deleteComment(Long id, Long id2, HttpServletRequest req) {
+    public StringResponseDto deleteComment(Long boardId, Long commentId, HttpServletRequest req) {
         //토큰 검증
         String tokenValue = validateToken(req);
-
-        Comment comment = commentRepository.findById(id2).orElseThrow(() ->
-                new IllegalArgumentException("해당 댓글이 없습니다")
-        );
         Claims info = jwtUtil.getUserInfoFromToken(tokenValue);
-        User user = userRepository.findByUsername(info.getSubject()).orElseThrow(()->{
-            throw new IllegalArgumentException("유저가 없을리가 없긴한데 일단 오류 만듬 ㅋㅋ");
-        });
-        Board board = boardRepository.findById(id).orElseThrow(()->{
-            throw new IllegalArgumentException("게시글이 존재하지 않습니다.");
-        });
 
-        if (!user.equals(comment.getUser()) || !board.equals(comment.getBoard())) {
-            throw new IllegalArgumentException("댓글의 아이디나 보드명이 다릅니다.");
+        Board board = boardRepository.findById(boardId).orElseThrow(() -> {
+            throw new CustomException(CommentErrorCode.CANNOT_FIND_BOARD);
+        });
+        Comment comment = commentRepository.findById(commentId).orElseThrow(() ->
+                new CustomException(CommentErrorCode.CANNOT_FIND_COMMENT)
+        );
+        if (!(info.get("auth").equals("ADMIN"))) {
+            if (!(info.getSubject().equals(comment.getUser().getUsername()))) {
+                throw new CustomException(CommentErrorCode.ID_NOT_MATCH);
+            }
         }
-
-        commentRepository.deleteById(id2);
+        commentRepository.deleteById(commentId);
         return new StringResponseDto("삭제가 잘 되었따");
     }
 
@@ -94,7 +90,7 @@ public class CommentService {
         String tokenValue = jwtUtil.getTokenFromRequest(req);
         tokenValue = jwtUtil.substringToken(tokenValue);
         if (!jwtUtil.validateToken(tokenValue)) {
-            throw new IllegalArgumentException("토큰이 유효하지 않음");
+            throw new CustomException(CommentErrorCode.BAD_TOKEN);
         }
         return tokenValue;
     }
