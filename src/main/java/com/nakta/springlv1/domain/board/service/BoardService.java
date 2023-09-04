@@ -3,6 +3,9 @@ package com.nakta.springlv1.domain.board.service;
 import com.nakta.springlv1.domain.board.dto.BoardRequestDto;
 import com.nakta.springlv1.domain.board.dto.BoardResponseDto;
 import com.nakta.springlv1.domain.board.repository.BoardRepository;
+import com.nakta.springlv1.domain.comment.dto.CommentResponseDto;
+import com.nakta.springlv1.domain.comment.entity.Comment;
+import com.nakta.springlv1.domain.comment.repository.CommentRepository;
 import com.nakta.springlv1.domain.user.dto.StringResponseDto;
 import com.nakta.springlv1.domain.board.entity.Board;
 import com.nakta.springlv1.domain.user.jwt.JwtUtil;
@@ -18,6 +21,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BoardService {
     private final BoardRepository boardRepository;
+    private final CommentRepository commentRepository;
+
     private final JwtUtil jwtUtil;
 
     public BoardResponseDto createBoard(BoardRequestDto requestDto, HttpServletRequest req) {
@@ -32,12 +37,22 @@ public class BoardService {
     }
 
     public List<BoardResponseDto> getAllBoard() {
-        return boardRepository.findAllByOrderByModifiedAtDesc().stream().map(BoardResponseDto::new).toList();
+        return boardRepository.findAllByOrderByModifiedAtDesc().stream()
+                .map(BoardResponseDto::new)
+                .map((a)-> {
+                    List<Comment> list = commentRepository.findAllByBoard_IdOrderByModifiedAtDesc(a.getId());
+                    a.addCommentList(list.stream().map(CommentResponseDto::new).toList());
+                    return a;
+                })
+                .toList();
     }
 
     public BoardResponseDto getOneBoard(Long id) {
         Board board = findById(id);
-        return new BoardResponseDto(board);
+        BoardResponseDto responseDto = new BoardResponseDto(board);
+        List<Comment> list = commentRepository.findAllByBoard_IdOrderByModifiedAtDesc(responseDto.getId());
+        responseDto.addCommentList(list.stream().map(CommentResponseDto::new).toList());
+        return responseDto;
     }
 
     @Transactional
