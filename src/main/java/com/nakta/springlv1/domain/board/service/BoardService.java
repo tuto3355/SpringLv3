@@ -39,20 +39,15 @@ public class BoardService {
     public List<BoardResponseDto> getAllBoard() {
         return boardRepository.findAllByOrderByModifiedAtDesc().stream()
                 .map(BoardResponseDto::new)
-                .map((a)-> {
-                    List<Comment> list = commentRepository.findAllByBoard_IdOrderByModifiedAtDesc(a.getId());
-                    a.addCommentList(list.stream().map(CommentResponseDto::new).toList());
-                    return a;
-                })
+                .map(this::addCommentListByBoard_id)
                 .toList();
     }
 
     public BoardResponseDto getOneBoard(Long id) {
         Board board = findById(id);
         BoardResponseDto responseDto = new BoardResponseDto(board);
-        List<Comment> list = commentRepository.findAllByBoard_IdOrderByModifiedAtDesc(responseDto.getId());
-        responseDto.addCommentList(list.stream().map(CommentResponseDto::new).toList());
-        return responseDto;
+        return addCommentListByBoard_id(responseDto);
+//        return addCommentListByBoard_id(new BoardResponseDto(findById(id)));  //한줄로 써도되나? 가독성 괜찮나?
     }
 
     @Transactional
@@ -91,6 +86,12 @@ public class BoardService {
 
     private Board findById(Long id) {
         return boardRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("선택한 메모는 존재하지 않습니다."));
+    }
+
+    private BoardResponseDto addCommentListByBoard_id(BoardResponseDto responseDto) {
+        List<Comment> list = commentRepository.findAllByBoard_IdOrderByModifiedAtDesc(responseDto.getId());
+        responseDto.addCommentList(list.stream().map(CommentResponseDto::new).toList());
+        return responseDto;
     }
 
     private String validateToken(HttpServletRequest req) {
