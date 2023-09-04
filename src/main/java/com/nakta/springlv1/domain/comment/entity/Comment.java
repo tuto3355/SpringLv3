@@ -1,6 +1,7 @@
 package com.nakta.springlv1.domain.comment.entity;
 
 import com.nakta.springlv1.domain.board.entity.Board;
+import com.nakta.springlv1.domain.board.entity.Timestamped;
 import com.nakta.springlv1.domain.comment.dto.CommentRequestDto;
 import com.nakta.springlv1.domain.user.entity.User;
 import jakarta.persistence.*;
@@ -11,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "Comment")
 @Getter
 @NoArgsConstructor
-public class Comment {
+public class Comment extends Timestamped { // Timestamped가 board 패키지에 있어서 매우 찝찝함
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
