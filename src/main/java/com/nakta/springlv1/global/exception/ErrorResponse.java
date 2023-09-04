@@ -9,11 +9,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ErrorResponse {
 
-    private final String errorName;
+//    private final String errorName;
     private final String message;
 
     public ErrorResponse(ErrorCode errorCode) {
-        this.errorName = errorCode.name();
+//        this.errorName = errorCode.name();
         this.message = errorCode.getMessage();
     }
 }

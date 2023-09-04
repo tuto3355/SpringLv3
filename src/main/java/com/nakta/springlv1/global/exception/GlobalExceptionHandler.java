@@ -18,7 +18,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
     private ErrorResponse makeErrorResponse(ErrorCode errorCode) {
         return ErrorResponse.builder()
-                .errorName(errorCode.name())
+//                .errorName(errorCode.name())
                 .message(errorCode.getMessage())
                 .build();
     }
